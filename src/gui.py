@@ -9,8 +9,12 @@ import cv2
 import os
 import rospy
 from control_gui.msg import PoseEndpoints
+import numpy as np
 
 class GUI:
+
+	X_SIZE = 10
+
 	def __init__(self):
 		# GUI 
 		self.stopEvent = None
@@ -27,8 +31,15 @@ class GUI:
 		self.push_button = tki.Button(self.button_frame, text="Push", command=self.push_select)
 		self.push_button.pack(side="right", pady=10, padx=10)
 
+		# Canvas IDs
 		self.canvas = None
 		self.idFrame = None
+		self.first_x_line_1_id = None
+		self.first_x_line_2_id = None
+
+		self.second_x_line_1_id = None
+		self.second_x_line_2_id = None
+
 		# Robot Action States
 		self.is_placing_align_points = False
 		self.is_placing_push_points = False
@@ -67,22 +78,58 @@ class GUI:
 		self.root.quit()
 
 	def click_callback(self, event):
-		print("called")
-		print(event)
+		self.draw_x(event.x, event.y, 0, "red")
 
 	def align_select(self):
+		self.clear_x_from_canvas()
 		self.is_placing_align_points = not self.is_placing_align_points
 		self.is_placing_push_points = False
+		self.clear_x_from_canvas()
 		if self.is_placing_align_points:
 			self.root.config(cursor="tcross")
 		else:
 			self.root.config(cursor="arrow")
 
 	def push_select(self):
+		self.clear_x_from_canvas()
 		self.is_placing_push_points = not self.is_placing_push_points
 		self.is_placing_align_points = False
 		if self.is_placing_push_points:
 			self.root.config(cursor="dotbox")
 		else:
 			self.root.config(cursor="arrow")
+
+	def clear_x_from_canvas(self):
+		if self.first_x_line_1_id is not None:
+			self.canvas.delete(self.first_x_line_1_id)
+		if self.first_x_line_2_id is not None:
+			self.canvas.delete(self.first_x_line_2_id)
+		if self.second_x_line_1_id is not None:
+			self.canvas.delete(self.second_x_line_1_id)
+		if self.second_x_line_2_id is not None:
+			self.canvas.delete(self.second_x_line_2_id)
+
+	def draw_x(self, x, y, theta, color):
+		transformation_matrix = self.get_transformation_matrix(x, y, theta)
+		first_diagonal_point = np.dot(transformation_matrix, np.array([GUI.X_SIZE, GUI.X_SIZE, 1]))
+		second_diagonal_point = np.dot(transformation_matrix, np.array([-GUI.X_SIZE, -GUI.X_SIZE, 1]))
+		new_line_1 = self.canvas.create_line(first_diagonal_point[0], first_diagonal_point[1], 
+												  second_diagonal_point[0], second_diagonal_point[1], width=3, fill=color)
+
+		first_diagonal_point = np.dot(transformation_matrix, np.array([GUI.X_SIZE, -GUI.X_SIZE, 1]))
+		second_diagonal_point = np.dot(transformation_matrix, np.array([-GUI.X_SIZE, GUI.X_SIZE, 1]))
+		new_line_2 = self.canvas.create_line(first_diagonal_point[0], first_diagonal_point[1], 
+												  second_diagonal_point[0], second_diagonal_point[1], width=3, fill=color)
+
+		if self.first_x_line_1_id is None:
+			self.first_x_line_1_id = new_line_1
+			self.first_x_line_2_id = new_line_2
+		else:
+			self.second_x_line_1_id = new_line_1
+			self.second_x_line_2_id = new_line_2
+		
+	def get_transformation_matrix(self, x, y, theta):
+		return np.array([[np.cos(theta), -np.sin(theta), x],
+						 [np.sin(theta), np.cos(theta), y],
+						 [0, 0, 1]])
 
