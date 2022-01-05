@@ -48,12 +48,14 @@ class GUI:
 			if self.canvas is None:
 				# Setup canvas
 				self.canvas = tki.Canvas(self.root, width=cv_img.shape[1], height=cv_img.shape[0])
-				self.canvas.pack()
-				self.canvas.bind("<Button-1>", self.click_callback)
+				self.canvas.pack(padx=10, pady=10)
 				self.idFrame = self.canvas.create_image(0, 0, image=image, anchor=tki.NW)
+				self.canvas.update()
+				self.canvas.bind("<Button-1>", self.click_callback)
 			else:
 				self.canvas.itemconfig(self.idFrame, image=image)
 				self.canvas.image = image
+				self.canvas.lower(self.idFrame)
 
 		except RuntimeError:
 			print("[INFO] caught a RuntimeError")
@@ -65,6 +67,7 @@ class GUI:
 		self.root.quit()
 
 	def click_callback(self, event):
+		print("called")
 		print(event)
 
 	def align_select(self):

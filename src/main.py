@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from gui import GUI
