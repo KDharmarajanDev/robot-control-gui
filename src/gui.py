@@ -15,7 +15,6 @@ class GUI:
 		# GUI 
 		self.stopEvent = None
 		self.root = tki.Tk()
-		self.panel = None
 		self.root.wm_title("YuMi GUI")
 		self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
 
@@ -29,7 +28,7 @@ class GUI:
 		self.push_button.pack(side="right", pady=10, padx=10)
 
 		self.canvas = None
-		
+		self.idFrame = None
 		# Robot Action States
 		self.is_placing_align_points = False
 		self.is_placing_push_points = False
@@ -46,18 +45,15 @@ class GUI:
 			image = Image.fromarray(image)
 			image = ImageTk.PhotoImage(image)
 
-			if self.panel is None:
-				self.panel = tki.Label(image=image)
-				self.panel.image = image
-				self.panel.pack(side="left", padx=10, pady=10)
-				self.panel.bind("<Button-1>", self.click_callback)
-
+			if self.canvas is None:
 				# Setup canvas
-				self.canvas = tki.Canvas(self.panel, width=cv_img.shape[1], height=cv_img.shape[0])
+				self.canvas = tki.Canvas(self.root, width=cv_img.shape[1], height=cv_img.shape[0])
 				self.canvas.pack()
+				self.canvas.bind("<Button-1>", self.click_callback)
+				self.idFrame = self.canvas.create_image(0, 0, image=image, anchor=tki.NW)
 			else:
-				self.panel.configure(image=image)
-				self.panel.image = image
+				self.canvas.itemconfig(self.idFrame, image=image)
+				self.canvas.image = image
 
 		except RuntimeError:
 			print("[INFO] caught a RuntimeError")
