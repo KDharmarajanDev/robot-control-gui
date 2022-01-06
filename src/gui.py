@@ -29,8 +29,14 @@ class GUI:
 		self.align_button.pack(side="left", pady=10, padx=10)
 
 		self.push_button = tki.Button(self.button_frame, text="Push", command=self.push_select)
-		self.push_button.pack(side="right", pady=10, padx=10)
+		self.push_button.pack(side="left", pady=10, padx=10)
 
+		self.clear_button = tki.Button(self.button_frame, text="Clear", command=self.clear_x_from_canvas)
+		self.clear_button.pack(side="left", pady=10, padx=10)
+
+		self.send_button = tki.Button(self.button_frame, text="Send", command=self.send_command)
+		self.send_button.pack(side="left", pady=10, padx=10)
+ 
 		# Canvas IDs
 		self.canvas = None
 		self.idFrame = None
@@ -78,7 +84,19 @@ class GUI:
 		self.root.quit()
 
 	def click_callback(self, event):
-		self.draw_x(event.x, event.y, 0, "red")
+		if self.is_placing_push_points or self.is_placing_align_points:
+			if self.first_x_line_1_id is None:
+				self.draw_x(event.x, event.y, 0, "red")
+				self.data.start.position.x = event.x
+				self.data.start.position.y = event.y
+				self.data.start.orientation.w = 1
+				self.data.start.orientation.z = 0
+			elif self.second_x_line_1_id is None:
+				self.draw_x(event.x, event.y, 0, "green")
+				self.data.end.position.x = event.x
+				self.data.end.position.y = event.y
+				self.data.end.orientation.w = 1
+				self.data.end.orientation.z = 0
 
 	def align_select(self):
 		self.clear_x_from_canvas()
@@ -87,8 +105,6 @@ class GUI:
 		self.clear_x_from_canvas()
 		if self.is_placing_align_points:
 			self.root.config(cursor="tcross")
-		else:
-			self.root.config(cursor="arrow")
 
 	def push_select(self):
 		self.clear_x_from_canvas()
@@ -96,18 +112,21 @@ class GUI:
 		self.is_placing_align_points = False
 		if self.is_placing_push_points:
 			self.root.config(cursor="dotbox")
-		else:
-			self.root.config(cursor="arrow")
 
 	def clear_x_from_canvas(self):
 		if self.first_x_line_1_id is not None:
 			self.canvas.delete(self.first_x_line_1_id)
+			self.first_x_line_1_id = None
 		if self.first_x_line_2_id is not None:
 			self.canvas.delete(self.first_x_line_2_id)
+			self.first_x_line_2_id = None
 		if self.second_x_line_1_id is not None:
 			self.canvas.delete(self.second_x_line_1_id)
+			self.second_x_line_1_id = None
 		if self.second_x_line_2_id is not None:
 			self.canvas.delete(self.second_x_line_2_id)
+			self.second_x_line_2_id = None
+		self.root.config(cursor="arrow")
 
 	def draw_x(self, x, y, theta, color):
 		transformation_matrix = self.get_transformation_matrix(x, y, theta)
@@ -132,4 +151,13 @@ class GUI:
 		return np.array([[np.cos(theta), -np.sin(theta), x],
 						 [np.sin(theta), np.cos(theta), y],
 						 [0, 0, 1]])
+	
+	def send_command(self):
+		if self.first_x_line_1_id is not None and self.second_x_line_2_id is not None:
+			if self.is_placing_align_points:
+				self.align_pub.publish(self.data)
+			elif self.is_placing_push_points:
+				self.push_pub.publish(self.data)
+			self.clear_x_from_canvas()
+
 
